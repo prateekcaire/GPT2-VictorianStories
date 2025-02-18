@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Miniature Nano Chat GPT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-image: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="max-w-3xl w-full bg-white bg-opacity-90 p-8 rounded-2xl shadow-2xl">
+        <h1 id="miniature-nano-chat-gpt" class="text-4xl font-extrabold mb-6 text-center text-gray-800">
+            Miniature Nano Chat GPT
+        </h1>
+
+        <form id="chat-form" class="flex flex-col items-center mb-4">
+            <input type="text" id="prompt-input" placeholder="Enter your prompt here" class="w-full p-2 border border-gray-300 rounded mb-2">
+            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                Generate
+            </button>
+        </form>
+
+        <div id="status" class="mt-4 text-center text-sm font-semibold"></div>
+
+        <div id="output" class="mt-8 p-6 bg-gray-100 rounded-lg min-h-[150px] shadow-inner whitespace-pre-wrap"></div>
+
+        <!-- Commented out debug div -->
+        <!--
+        <div id="debug" class="mt-4 p-4 bg-yellow-100 rounded-lg text-xs font-mono"></div>
+        -->
+    </div>
+
+    <script>
+        const chatForm = document.getElementById('chat-form');
+        const promptInput = document.getElementById('prompt-input');
+        const statusDiv = document.getElementById('status');
+        const outputDiv = document.getElementById('output');
+        // Commented out debug div reference
+        // const debugDiv = document.getElementById('debug');
+
+        let socket;
+        let messageCount = 0;
+
+        function connectWebSocket() {
+            socket = new WebSocket('wss://u3z4o1jl33.execute-api.us-west-2.amazonaws.com/prod/');
+
+            socket.addEventListener('open', (event) => {
+                statusDiv.textContent = 'Connected to WebSocket';
+                // Commented out debug message
+                // debugDiv.textContent += 'WebSocket connected\n';
+            });
+
+            socket.addEventListener('message', (event) => {
+                messageCount++;
+                // Commented out debug message
+                // debugDiv.textContent += `Message ${messageCount} received: ${event.data}\n`;
+
+                try {
+                    const response = JSON.parse(event.data);
+                    if (response.token) {
+                        outputDiv.textContent += response.token + ' ';
+                    } else if (response.completion === true) {
+                        statusDiv.textContent = 'Text generation completed';
+                    } else {
+                        outputDiv.textContent += 'Unexpected response format: ' + JSON.stringify(response, null, 2);
+                    }
+                } catch (error) {
+                    outputDiv.textContent += 'Error parsing response: ' + event.data;
+                    // Commented out debug message
+                    // debugDiv.textContent += `Error parsing message ${messageCount}: ${error}\n`;
+                }
+            });
+
+            socket.addEventListener('error', (event) => {
+                console.error('WebSocket error:', event);
+                statusDiv.textContent = 'Error: Please check console for details';
+                // Commented out debug message
+                // debugDiv.textContent += `WebSocket error: ${event}\n`;
+            });
+
+            socket.addEventListener('close', (event) => {
+                statusDiv.textContent = 'Disconnected from WebSocket';
+                // Commented out debug message
+                // debugDiv.textContent += `WebSocket disconnected. Code: ${event.code}, Reason: ${event.reason}\n`;
+                setTimeout(connectWebSocket, 3000); // Attempt to reconnect after 3 seconds
+            });
+        }
+
+        connectWebSocket();
+
+        chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (socket.readyState === WebSocket.OPEN) {
+                const message = {
+                    action: 'sendmessage',
+                    prompt: promptInput.value,
+                    max_tokens: 100
+                };
+                socket.send(JSON.stringify(message));
+                statusDiv.textContent = 'Sending request...';
+                outputDiv.textContent = ''; // Clear previous output
+                // Commented out debug message
+                // debugDiv.textContent += `Sent message: ${JSON.stringify(message)}\n`;
+            } else {
+                statusDiv.textContent = 'WebSocket is not connected. Please wait...';
+                // Commented out debug message
+                // debugDiv.textContent += 'Attempted to send message while WebSocket was not connected\n';
+            }
+        });
+    </script>
+</body>
+</html>

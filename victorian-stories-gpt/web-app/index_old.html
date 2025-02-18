@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Miniature Nano Chat GPT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-r from-purple-400 to-pink-500 min-h-screen flex items-center justify-center">
+    <div class="max-w-3xl w-full bg-white bg-opacity-90 p-8 rounded-2xl shadow-2xl">
+        <h1 class="text-4xl font-extrabold mb-6 text-center text-gray-800">Miniature Nano Chat GPT</h1>
+
+        <textarea id="prompt" class="w-full p-2 mb-4 border rounded" rows="4" placeholder="Enter your prompt here...">Once upon a time,</textarea>
+
+        <div class="flex justify-center">
+            <button id="generate" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Generate
+            </button>
+        </div>
+
+        <div id="status" class="mt-4 text-center text-sm font-semibold"></div>
+
+        <div id="output" class="mt-8 p-6 bg-gray-100 rounded-lg min-h-[150px] shadow-inner"></div>
+    </div>
+
+    <script>
+        const generateBtn = document.getElementById('generate');
+        const promptInput = document.getElementById('prompt');
+        const outputDiv = document.getElementById('output');
+        const statusDiv = document.getElementById('status');
+
+        let socket;
+        let isConnected = false;
+
+        function updateStatus(message, isError = false) {
+            statusDiv.textContent = message;
+            statusDiv.className = isError ? 'mt-4 text-center text-sm font-semibold text-red-500' : 'mt-4 text-center text-sm font-semibold text-green-500';
+        }
+
+        function connectWebSocket() {
+            updateStatus('Connecting...');
+            socket = new WebSocket('wss://u3z4o1jl33.execute-api.us-west-2.amazonaws.com/prod');
+
+            socket.onopen = function(event) {
+                console.log('WebSocket connection opened');
+                isConnected = true;
+                updateStatus('Connected');
+                generateBtn.disabled = false;
+            };
+
+            socket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.token) {
+                    outputDiv.innerText += data.token;
+                }
+                if (data.completion) {
+                    generateBtn.disabled = false;
+                    generateBtn.innerText = 'Generate';
+                }
+            };
+
+            socket.onerror = function(error) {
+                console.error('WebSocket error:', error);
+                isConnected = false;
+                updateStatus('Error: Could not connect to the server.', true);
+                generateBtn.disabled = true;
+            };
+
+            socket.onclose = function(event) {
+                console.log('WebSocket connection closed');
+                isConnected = false;
+                updateStatus('Disconnected. Attempting to reconnect...', true);
+                setTimeout(connectWebSocket, 3000);
+            };
+        }
+
+        generateBtn.addEventListener('click', function() {
+            if (!isConnected) {
+                updateStatus('Not connected. Please wait...', true);
+                return;
+            }
+
+            outputDiv.innerText = '';  // Clear previous output
+            generateBtn.disabled = true;
+            generateBtn.innerText = 'Generating...';
+
+            const prompt = promptInput.value;
+
+            socket.send(JSON.stringify({
+                action: 'sendmessage',
+                prompt: prompt,
+                max_tokens: 1000
+            }));
+        });
+
+        connectWebSocket();
+    </script>
+</body>
+</html>
