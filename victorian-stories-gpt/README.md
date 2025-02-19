@@ -47,39 +47,33 @@ flowchart TB
     Input[Input Tokens]
     TokenEmb[Token Embeddings]
     PosEmb[Positional Embeddings]
-    Add1["+"]
+    Add1[+]
     
-    Input --> TokenEmb
-    Input --> PosEmb
-    TokenEmb --> Add1
-    PosEmb --> Add1
+    Input --> TokenEmb & PosEmb
+    TokenEmb & PosEmb --> Add1
     
     subgraph TransformerBlock[Transformer Blocks x12]
         LN1[LayerNorm]
         MHA[Multi-Head Attention]
-        Add2["+"]
+        Add2[+]
         LN2[LayerNorm]
         FFN[Feed Forward Network]
-        Add3["+"]
+        Add3[+]
         
-        Add1 --> LN1
-        LN1 --> MHA
-        MHA --> Add2
-        Add1 ---> Add2
-        Add2 --> LN2
-        LN2 --> FFN
-        FFN --> Add3
-        Add2 ---> Add3
+        Add1 --> LN1 --> MHA --> Add2
+        Add1 --> Add2
+        Add2 --> LN2 --> FFN --> Add3
+        Add2 --> Add3
     end
     
-    FinalLN[Final LayerNorm]
-    LMHead[Language Model Head]
-    Output[Output Logits]
-    
-    Add3 --> FinalLN
-    FinalLN --> LMHead
-    LMHead --> Output
-    class Add1,Add2,Add3 addition
+    Add3 --> FinalLN[Final LayerNorm]
+    FinalLN --> LMHead[Language Model Head]
+    LMHead --> Output[Output Logits]
+
+    classDef default fill:#f9f9f9,stroke:#333,stroke-width:1px
+    classDef plus fill:#e8e8e8,stroke:#333,stroke-width:1px
+    class Add1,Add2,Add3 plus
+    style TransformerBlock fill:#f0f0f0,stroke:#333,stroke-width:1px
 ```
 
 ## 3. System Architecture
