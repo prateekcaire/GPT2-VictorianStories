@@ -70,8 +70,6 @@ flowchart TB
     FinalLN --> LMHead[Language Model Head]
     LMHead --> Output[Output Logits]
 
-    classDef default fill:#f9f9f9,stroke:#333,stroke-width:1px
-    classDef plus fill:#e8e8e8,stroke:#333,stroke-width:1px
     class Add1,Add2,Add3 plus
 ```
 
