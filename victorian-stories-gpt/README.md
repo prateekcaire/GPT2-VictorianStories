@@ -47,23 +47,24 @@ flowchart TB
     Input["Input Tokens"] --> TokenEmb["Token Embeddings"]
     Input --> PosEmb["Positional Embeddings"]
     
-    TokenEmb & PosEmb --> Add1(("+"))
+    TokenEmb --> Add1(("+"))
+    PosEmb --> Add1
     
     subgraph TransformerBlock["Transformer Blocks x12"]
-        Add1 --> Norm1["LayerNorm"]
-        Norm1 --> MHA["Multi-Head Attention"]
-        MHA & Add1 --> Add2(("+"))
+        Add1 --> LN1["LayerNorm"]
+        LN1 --> MHA["Multi-Head Attention"]
+        MHA --> Add2(("+"))
+        Add1 --> Add2
         
-        Add2 --> Norm2["LayerNorm"]
-        Norm2 --> FFN["Feed Forward Network"]
-        FFN & Add2 --> Add3(("+"))
+        Add2 --> LN2["LayerNorm"]
+        LN2 --> FFN["Feed Forward Network"]
+        FFN --> Add3(("+"))
+        Add2 --> Add3
     end
     
-    Add3 --> FinalNorm["Final LayerNorm"]
-    FinalNorm --> LMHead["Language Model Head"]
+    Add3 --> FinalLN["Final LayerNorm"]
+    FinalLN --> LMHead["Language Model Head"]
     LMHead --> Output["Output Logits"]
-
-    style TransformerBlock fill:#f0f0f0,stroke:#333,stroke-width:1px
 ```
 
 ## 3. System Architecture
