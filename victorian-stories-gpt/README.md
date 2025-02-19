@@ -73,6 +73,60 @@ flowchart TB
     class Add1,Add2,Add3 plus
 ```
 
+```mermaid
+flowchart TB
+    Input[Input] --> Split[Split Channels]
+    
+    subgraph Head1["Head 1"]
+        Q1[Q Linear] & K1[K Linear] & V1[V Linear]
+        Q1 & K1 --> MatMul1["MatMul/√dk"]
+        MatMul1 --> Mask1["Causal Mask"]
+        Mask1 --> Softmax1["Softmax"]
+        Softmax1 & V1 --> Att1["Attention Output"]
+    end
+    
+    subgraph Head2["Head 2"]
+        Q2[Q Linear] & K2[K Linear] & V2[V Linear]
+        Q2 & K2 --> MatMul2["MatMul/√dk"]
+        MatMul2 --> Mask2["Causal Mask"]
+        Mask2 --> Softmax2["Softmax"]
+        Softmax2 & V2 --> Att2["Attention Output"]
+    end
+    
+    subgraph HeadN["Head N"]
+        Q3[Q Linear] & K3[K Linear] & V3[V Linear]
+        Q3 & K3 --> MatMul3["MatMul/√dk"]
+        MatMul3 --> Mask3["Causal Mask"]
+        Mask3 --> Softmax3["Softmax"]
+        Softmax3 & V3 --> Att3["Attention Output"]
+    end
+    
+    Split --> Q1 & K1 & V1
+    Split --> Q2 & K2 & V2
+    Split --> Q3 & K3 & V3
+    
+    Att1 & Att2 & Att3 --> Concat[Concatenate]
+    Concat --> Linear[Output Linear]
+    Linear --> Dropout[Dropout]
+    
+    classDef default fill:#f9f9f9,stroke:#333,stroke-width:1px
+    classDef head fill:#e8f4f9,stroke:#333,stroke-width:1px
+    class Head1,Head2,HeadN head
+    
+    %% Add dots to indicate more heads
+    style HeadN opacity:0.7
+    
+    %% Add notes
+    note1["""
+    Notes:
+    - Each head processes a subset of channels
+    - dk: Key dimension (n_channels / n_heads)
+    - Causal mask ensures autoregressive property
+    - Final linear layer combines all head outputs
+    """]
+    style note1 fill:#f9f9f9,stroke:#ccc,stroke-width:1px
+```
+
 ## 3. System Architecture
 
 ### Training Architecture
