@@ -1,10 +1,11 @@
 # Victorian Literature Generator
 
 ## 1. Brief Overview
-Implementation of LLM from scratch without using any foundational models. The Victorian Literature Generator is a sophisticated natural language processing system designed to generate text in the style of Victorian literature. It uses a custom GPT-2 style architecture trained on a curated dataset of Victorian-era texts(all the books in Project Gutenberg released before year 1919). The system includes both training and inference components, with deployment options ranging from local Streamlit applications to serverless AWS deployments.
+The Victorian Literature Generator is an implementation of Transformer architecture from scratch without using any foundation model. Model is trained on Hugging face dataset pg-19, which is all the book in Project gutenberg that were released before 1919. The Victorian Literature Generator is a sophisticated natural language processing system designed to generate text in the style of Victorian literature. It uses a custom GPT-2 style architecture trained on a curated dataset of Victorian-era texts. The system includes both training and inference components, with deployment options ranging from local Streamlit applications to serverless AWS deployments.
+
+![Demo](./demo.mp4)
 
 ### Key Features
-- 
 - Custom transformer-based language model
 - Multi-platform deployment (local, AWS SageMaker, serverless)
 - Interactive text generation with adjustable parameters
@@ -38,7 +39,119 @@ Implementation of LLM from scratch without using any foundational models. The Vi
 - Top-P: 0.0 - 1.0 (default: 0.95)
 - Repetition Penalty: 1.2
 
+### Model Architecture
+The transformer-based model architecture:
+
+```mermaid
+flowchart TB
+    Input["Input Tokens"] --> TokenEmb["Token Embeddings"]
+    Input --> PosEmb["Positional Embeddings"]
+    
+    TokenEmb --> Add(("+"))
+    PosEmb --> Add
+    
+    subgraph TransformerBlock["Transformer Blocks x12"]
+        direction TB
+        Add --> LN1["LayerNorm"]
+        LN1 --> Attention["Multi-Head Attention"]
+        Attention --> AddAtt(("+"))
+        Add --> AddAtt
+        
+        AddAtt --> LN2["LayerNorm"]
+        LN2 --> FFN["Feed Forward Network"]
+        FFN --> AddFFN(("+"))
+        AddAtt --> AddFFN
+    end
+    
+    AddFFN --> FinalLN["Final LayerNorm"]
+    FinalLN --> LMHead["Language Model Head"]
+    LMHead --> Output["Output Logits"]
+```
+
 ## 3. System Architecture
+
+### Training Architecture
+The following diagram illustrates the training pipeline, from data processing to model artifact generation:
+
+```mermaid
+flowchart TB
+    subgraph Data["Data Processing"]
+        PG19["PG19 Dataset"] --> Tokenizer["GPT-2 Tokenizer"]
+        Tokenizer --> Sharding["Data Sharding"]
+        Sharding --> S3data["S3 Training Data"]
+    end
+
+    subgraph Training["SageMaker Training"]
+        S3data --> DDP["Distributed Data Parallel"]
+        DDP --> Train["Training Job"]
+        Train --> ModelArtifacts["Model Artifacts"]
+    end
+
+    subgraph Monitoring["Training Monitoring"]
+        Train --> CloudWatch["CloudWatch Metrics"]
+        Train --> TensorBoard["TensorBoard"]
+        Train --> LossChart["Loss Charts"]
+    end
+
+    ModelArtifacts --> S3model["S3 Model Storage"]
+```
+
+### Inference Architecture
+The system uses a serverless architecture for inference, with real-time token streaming:
+
+```mermaid
+flowchart LR
+    subgraph Client["Client Applications"]
+        StreamlitApp["Streamlit App"]
+        WebApp["Web Application"]
+    end
+
+    subgraph AWS["AWS Infrastructure"]
+        direction TB
+        API["API Gateway"]
+        Lambda["Lambda Function"]
+        SageMaker["SageMaker Endpoint"]
+        
+        API --> Lambda
+        Lambda --> SageMaker
+    end
+
+    subgraph Storage["Model Storage"]
+        S3["S3 Bucket"]
+        S3 --> SageMaker
+    end
+
+    StreamlitApp --> API
+    WebApp --> API
+```
+
+### WebSocket Communication Flow
+The sequence of events during text generation:
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Gateway as API Gateway
+    participant Lambda
+    participant SageMaker as SageMaker Endpoint
+    
+    Client->>Gateway: Connect WebSocket
+    Gateway->>Client: Connection Confirmed
+    
+    Client->>Gateway: Send Generation Request
+    Gateway->>Lambda: Invoke Lambda
+    
+    Lambda->>SageMaker: Generate Text
+    
+    loop Token Generation
+        SageMaker->>Lambda: Generate Token
+        Lambda->>Gateway: Stream Token
+        Gateway->>Client: Send Token
+    end
+    
+    Lambda->>Gateway: Generation Complete
+    Gateway->>Client: Complete Message
+```
 
 ### Local Development
 ```
@@ -47,6 +160,7 @@ project/
 ├── model.py              # Core model implementation
 ├── train.py              # Training script
 ├── requirements.txt      # Dependencies
+└── downloaded_models/    # Model checkpoints
 ```
 
 ### AWS Deployment Architecture
@@ -61,12 +175,6 @@ project/
    - Lambda Functions
    - API Gateway (WebSocket)
    - CloudWatch Monitoring
-
-### WebSocket Integration
-- Real-time token streaming
-- Bi-directional communication
-- Client-side JavaScript integration
-- AWS API Gateway WebSocket APIs
 
 ## 4. Training Process
 
@@ -140,16 +248,3 @@ The model's output can be controlled through several parameters:
 - Generation quality depends on temperature settings
 - Limited to Victorian-era writing style
 - Resource-intensive training requirements
-
-## 7. Future Improvements
-- Implement model quantization
-- Add support for fine-tuning
-- Enhance WebSocket streaming performance
-- Implement caching for frequent prompts
-- Add support for different literary styles
-
-## 8. Contributing
-Contributions are welcome! Please read the contributing guidelines before submitting pull requests.
-
-## 9. License
-[Specify your license here]
