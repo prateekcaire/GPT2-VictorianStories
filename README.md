@@ -3,6 +3,15 @@
 ## 1. Brief Overview
 The Victorian Literature Generator is an implementation of Transformer architecture from scratch without using any foundation model. Model is trained on Hugging face dataset pg-19, which is all the book in Project gutenberg that were released before 1919. The Victorian Literature Generator is a sophisticated natural language processing system designed to generate text in the style of Victorian literature. It uses a custom GPT-2 style architecture trained on a curated dataset of Victorian-era texts. The system includes both training and inference components, with deployment options ranging from local Streamlit applications to serverless AWS deployments.
 
+- Custom transformer architecture with 128M parameters (slightly larger than GPT-2 small)
+- Trained on 3 billion tokens from Project Gutenberg's pre-1919 book collection (~12GB)
+- Efficient AWS deployment with real-time text generation via WebSocket streaming
+- Distributed training optimized on AWS SageMaker using p4d.24xlarge instances
+- Architecture: 12 layers, 768 dimensional channels, 12 attention heads
+- Context window: 2048 tokens
+- Vocabulary size: 50,304 tokens
+- Training time: ~25 hours on p4d.24xlarge aws instance with optimizations including DDP, Gradient Accumulation, Mixed Precision etc.
+
 ![Demo](./victorian-stories-gpt/demogif.gif)
 
 ### Key Features
